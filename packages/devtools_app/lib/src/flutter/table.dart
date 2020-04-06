@@ -10,9 +10,6 @@ import 'collapsible_mixin.dart';
 import 'flutter_widgets/linked_scroll_controller.dart';
 import 'theme.dart';
 
-// TODO(devoncarew): We need to render the selected row with a different
-// background color.
-
 typedef IndexedScrollableWidgetBuilder = Widget Function(
   BuildContext,
   LinkedScrollControllerGroup linkedScrollControllerGroup,
@@ -64,10 +61,13 @@ class FlatTable<T> extends StatefulWidget {
 }
 
 class FlatTableState<T> extends State<FlatTable<T>>
-    implements SortableTable<T> {
+    implements SortableTable<T>, SelectableTable<T> {
   List<double> columnWidths;
 
   List<T> data;
+
+  @override
+  T _selectedNode;
 
   @override
   void initState() {
@@ -121,14 +121,17 @@ class FlatTableState<T> extends State<FlatTable<T>>
     int index,
   ) {
     final node = widget.data[index];
+    final isNodeSelected = _selectedNode == node;
     return TableRow<T>(
       key: widget.keyFactory(node),
       linkedScrollControllerGroup: linkedScrollControllerGroup,
       node: node,
-      onPressed: widget.onItemSelected,
+      onPressed: _setNodeSelected,
       columns: widget.columns,
       columnWidths: columnWidths,
-      backgroundColor: TableRow.colorFor(context, index),
+      backgroundColor: isNodeSelected
+          ? Theme.of(context).selectedRowColor
+          : TableRow.colorFor(context, index),
     );
   }
 
@@ -136,6 +139,11 @@ class FlatTableState<T> extends State<FlatTable<T>>
     setState(() {
       sortData(column, direction);
     });
+  }
+
+  void _setNodeSelected(T node) {
+    setState(() => _selectedNode = node);
+    widget.onItemSelected(node);
   }
 
   @override
@@ -209,6 +217,7 @@ class TreeTableState<T extends TreeNode<T>> extends State<TreeTable<T>>
   List<T> animatingChildren = [];
   Set<T> animatingChildrenSet = {};
   T animatingNode;
+  T selectedNode;
   List<double> columnWidths;
   List<bool> rootsExpanded;
 
@@ -262,6 +271,9 @@ class TreeTableState<T extends TreeNode<T>> extends State<TreeTable<T>>
   }
 
   void _onItemPressed(T node) {
+    // Clicking on a node always selects it.
+    selectedNode = node;
+
     /// Rebuilds the table whenever the tree structure has been updated
     if (!node.isExpandable) return;
     setState(() {
@@ -863,6 +875,10 @@ class _TableRowState<T> extends State<TableRow<T>>
 
 abstract class SortableTable<T> {
   void sortData(ColumnData column, SortDirection direction);
+}
+
+abstract class SelectableTable<T> {
+  T _selectedNode;
 }
 
 int _compareFactor(SortDirection direction) =>

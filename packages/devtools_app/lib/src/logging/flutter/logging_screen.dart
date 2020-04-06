@@ -98,6 +98,7 @@ class _LoggingScreenState extends State<LoggingScreenBody>
         if (selected != null) {
           final List<LogData> items = controller.filteredData;
           if (!items.contains(selected)) {
+            // WARNING! this only clears the tracking variable now
             selected = null;
           }
         }
@@ -152,6 +153,7 @@ class _LoggingScreenState extends State<LoggingScreenBody>
   void _clearLogs() {
     setState(() {
       controller.clear();
+      // WARNING! this only clears the tracking variable now
       selected = null;
     });
   }
